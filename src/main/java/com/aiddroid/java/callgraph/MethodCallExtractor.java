@@ -1,6 +1,6 @@
 package com.aiddroid.java.callgraph;
 
-import com.github.javaparser.JavaParser;
+import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -55,7 +55,8 @@ public class MethodCallExtractor {
     public Map<String, List<String>> getMethodCallRelation(List<String> srcPaths, List<String> libPaths, List<Pattern> skipPatterns) {
         // 从src和lib目录下解析出符号
         JavaSymbolSolver symbolSolver = SymbolSolverFactory.getJavaSymbolSolver(srcPaths, libPaths);
-        JavaParser.getStaticConfiguration().setSymbolResolver(symbolSolver);
+        // JavaParser.getStaticConfiguration().setSymbolResolver(symbolSolver);
+        StaticJavaParser.getConfiguration().setSymbolResolver(symbolSolver);
 
         // 获取src目录中的全部java文件，并进行解析
         Map<String, List<String>> callerCallees = new HashMap<>();
@@ -81,7 +82,7 @@ public class MethodCallExtractor {
         
         CompilationUnit cu = null;
         try {
-            cu = JavaParser.parse(new FileInputStream(javaFile));
+            cu = StaticJavaParser.parse(new FileInputStream(javaFile));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
