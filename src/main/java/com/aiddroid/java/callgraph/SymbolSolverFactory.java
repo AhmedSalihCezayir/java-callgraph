@@ -5,6 +5,8 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSol
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JarTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import com.github.javaparser.symbolsolver.utils.SymbolSolverCollectionStrategy;
+import com.github.javaparser.utils.ProjectRoot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,15 +30,20 @@ public class SymbolSolverFactory {
      * @return 
      */
     public static JavaSymbolSolver getJavaSymbolSolver(List<String> srcPaths, List<String> libPaths) {
+        CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
+
         ReflectionTypeSolver reflectionTypeSolver = new ReflectionTypeSolver(); // jdk推理
         reflectionTypeSolver.setParent(reflectionTypeSolver);
-        List<JavaParserTypeSolver> javaParserTypeSolvers = makeJavaParserTypeSolvers(srcPaths); //工程内代码推理
-        List<JarTypeSolver> jarTypeSolvers = makeJarTypeSolvers(libPaths);//jar包推理
-        CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
         combinedTypeSolver.add(reflectionTypeSolver);
-        javaParserTypeSolvers.stream().forEach(t -> combinedTypeSolver.add(t));
+
+        ProjectRoot projectRoot = new SymbolSolverCollectionStrategy().collect(new File(srcPaths.get(0)).toPath());
+        projectRoot.getSourceRoots().forEach(root -> combinedTypeSolver.add(new JavaParserTypeSolver(root.getRoot())));
+
+        List<JarTypeSolver> jarTypeSolvers = makeJarTypeSolvers(libPaths);//jar包推理
         jarTypeSolvers.stream().forEach(t -> combinedTypeSolver.add(t));
+
         JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedTypeSolver);
+
         return symbolSolver;
     }
 
