@@ -58,7 +58,7 @@ public class MethodCallExtractor {
         JavaSymbolSolver symbolSolver = SymbolSolverFactory.getJavaSymbolSolver(srcPaths, libPaths);
         // JavaParser.getStaticConfiguration().setSymbolResolver(symbolSolver);
         StaticJavaParser.getConfiguration().setSymbolResolver(symbolSolver);
-        StaticJavaParser.getConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_15);
+        StaticJavaParser.getConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
 
         // 获取src目录中的全部java文件，并进行解析
         Map<String, List<String>> callerCallees = new HashMap<>();
