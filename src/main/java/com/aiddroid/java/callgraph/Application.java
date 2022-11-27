@@ -3,13 +3,13 @@ package com.aiddroid.java.callgraph;
 import java.io.File;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.*;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import org.jgrapht.nio.dot.DOTExporter;
@@ -35,38 +35,72 @@ public class Application {
         
         // 获取方法调用关系
         MethodCallExtractor extractor = new MethodCallExtractor(settings);
-        Map<String, List<String>> methodCallRelation = extractor.getMethodCallRelationByDefault();
-        
+        ProjectInfo projectInfo = extractor.getMethodCallRelationByDefault();
+
+        Map<CallGraphNode, List<CalleeFunction>> methodCallRelation = projectInfo.getCallerCallees();
+        HashMap<String, BasicFunctionDefNode> definedFunctions = projectInfo.getDefinedFunctions();
+
+        System.out.println("\n\n*******************************************************\n\n");
+        System.out.println(methodCallRelation);
+        System.out.println("\n\n*******************************************************\n\n");
+        System.out.println(definedFunctions);
+        System.out.println("\n\n*******************************************************\n\n");
+
         // 声明有向图
-        Graph<String, DefaultEdge> directedGraph =
-            new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
-        
-        // 构建有向图
-        for (Map.Entry<String, List<String>> entry : methodCallRelation.entrySet()) {
-            String caller = entry.getKey();
-            // 添加节点和边
-            directedGraph.addVertex(caller);
-            for (String callee : entry.getValue()) {
-                directedGraph.addVertex(callee);
-                directedGraph.addEdge(caller, callee);
+//        Graph<String, DefaultEdge> directedGraph =
+//            new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
+
+        DirectedWeightedPseudograph<CallGraphNode, DefaultWeightedEdge> graph =
+                new DirectedWeightedPseudograph<>(DefaultWeightedEdge.class);
+
+        methodCallRelation.forEach((caller, calleeList) -> {
+            if (!graph.containsVertex(caller)) {
+                graph.addVertex(caller);
             }
-        }
+            calleeList.forEach((calleeFunction -> {
+                if (!definedFunctions.containsKey(calleeFunction.getFunctionSignature())) {
+                    // This method is not user defined
+                    return;
+                }
+                BasicFunctionDefNode functionDefNode = definedFunctions.get(calleeFunction.getFunctionSignature());
+                CallGraphNode callee = new CallGraphNode(calleeFunction.getFunctionSignature(),
+                                                                calleeFunction.getClassName(),
+                                                                calleeFunction.getFunctionName(),
+                                                                calleeFunction.getPackageName(),
+                                                                functionDefNode.getFilePath(),
+                                                                functionDefNode.getDeclarationStart(),
+                                                                functionDefNode.getDeclarationEnd());
+
+                if (!graph.containsVertex(callee)) {
+                    graph.addVertex(callee);
+                }
+                DefaultWeightedEdge edge = graph.addEdge(caller, callee);
+                graph.setEdgeWeight(edge, calleeFunction.getCallLine());
+            }));
+        });
         
-        logger.info("directedGraph:" + directedGraph + "\n");
+//        // 构建有向图
+//        for (Map.Entry<String, List<String>> entry : methodCallRelation.entrySet()) {
+//            String caller = entry.getKey();
+//            // 添加节点和边
+//            directedGraph.addVertex(caller);
+//            for (String callee : entry.getValue()) {
+//                directedGraph.addVertex(callee);
+//                directedGraph.addEdge(caller, callee);
+//            }
+//        }
+//
+        logger.info("graph:" + graph + "\n");
         logger.info("View doT graph below via https://edotor.net/ :" + "\n");
-        
-        String doT = toDoT(directedGraph);
+
+        String doT = toDoT(graph);
         logger.info(doT);
-        
-        // 获取output配置并判断是否需要保存doT到文件
-        String outputFile = settings.getOutput();
-        if (outputFile != null) {
-            try {
-                FileUtils.writeStringToFile(new File(outputFile), doT, "UTF-8", true);
-                logger.info("doT image saved to " + outputFile);
-            } catch (Exception e) {
-                logger.error("write doT error, " + e.getMessage());
-            }
+
+        try {
+            FileUtils.writeStringToFile(new File("graph.txt"), doT, "UTF-8", true);
+            logger.info("doT image saved to graph.txt");
+        } catch (Exception e) {
+            logger.error("write doT error, " + e.getMessage());
         }
     }
     
@@ -75,11 +109,8 @@ public class Application {
      * @param directedGraph
      * @return 
      */
-    public static String toDoT(Graph<String, DefaultEdge> directedGraph) {
-        DOTExporter<String, DefaultEdge> exporter = new DOTExporter<>(v -> {
-            // 替换掉特殊字符
-            return Utils.removeIllegalChar(v);
-        });
+    public static String toDoT(Graph<CallGraphNode, DefaultWeightedEdge> directedGraph) {
+        DOTExporter<CallGraphNode, DefaultWeightedEdge> exporter = new DOTExporter<>();
         
         // 为节点添加label
         exporter.setVertexAttributeProvider((v) -> {
