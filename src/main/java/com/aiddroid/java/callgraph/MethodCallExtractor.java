@@ -56,7 +56,8 @@ public class MethodCallExtractor {
     public Map<String, List<String>> getMethodCallRelation(List<String> srcPaths, List<String> libPaths, List<Pattern> skipPatterns) {
         // 从src和lib目录下解析出符号
         JavaSymbolSolver symbolSolver = SymbolSolverFactory.getJavaSymbolSolver(srcPaths, libPaths);
-        // JavaParser.getStaticConfiguration().setSymbolResolver(symbolSolver);
+        // TODO This is the latest way of configuring the parser. Check whether it breaks anything or not. If it does not break anything change it to the newer version.
+        // StaticJavaParser.getParserConfiguration().setSymbolResolver(symbolSolver);
         StaticJavaParser.getConfiguration().setSymbolResolver(symbolSolver);
         StaticJavaParser.getConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
         StaticJavaParser.getConfiguration().setPreprocessUnicodeEscapes(true);
