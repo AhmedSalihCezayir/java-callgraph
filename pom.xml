@@ -134,6 +134,11 @@
             <artifactId>commons-cli</artifactId>
             <version>1.4</version>
         </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>5.2.0</version>
+        </dependency>
     </dependencies>
     <name>java-callgraph</name>
 </project>

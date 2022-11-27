@@ -131,8 +131,8 @@ public class MethodCallExtractor {
                 callerCallees.get(callGraphNode).addAll(curCallees);
             }
             
-            logger.info("caller:" + callGraphNode);
-            logger.info("callerCallees:" + callerCallees);
+//            logger.info("caller:" + callGraphNode);
+//            logger.info("callerCallees:" + callerCallees);
         }
 
         logger.info("End parsing " + javaFile);

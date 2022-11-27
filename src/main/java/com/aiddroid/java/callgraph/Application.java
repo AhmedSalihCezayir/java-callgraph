@@ -13,6 +13,7 @@ import org.jgrapht.graph.*;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import org.jgrapht.nio.dot.DOTExporter;
+import org.neo4j.driver.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,21 +41,11 @@ public class Application {
         Map<CallGraphNode, List<CalleeFunction>> methodCallRelation = projectInfo.getCallerCallees();
         HashMap<String, BasicFunctionDefNode> definedFunctions = projectInfo.getDefinedFunctions();
 
-        System.out.println("\n\n*******************************************************\n\n");
-        System.out.println(methodCallRelation);
-        System.out.println("\n\n*******************************************************\n\n");
-        System.out.println(definedFunctions);
-        System.out.println("\n\n*******************************************************\n\n");
-
-        // 声明有向图
-//        Graph<String, DefaultEdge> directedGraph =
-//            new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
-
         DirectedWeightedPseudograph<CallGraphNode, DefaultWeightedEdge> graph =
                 new DirectedWeightedPseudograph<>(DefaultWeightedEdge.class);
 
         methodCallRelation.forEach((caller, calleeList) -> {
-            if (!graph.containsVertex(caller)) {
+            if (!graph.containsVertex(caller) && !calleeList.isEmpty()) {
                 graph.addVertex(caller);
             }
             calleeList.forEach((calleeFunction -> {
@@ -78,30 +69,27 @@ public class Application {
                 graph.setEdgeWeight(edge, calleeFunction.getCallLine());
             }));
         });
-        
-//        // 构建有向图
-//        for (Map.Entry<String, List<String>> entry : methodCallRelation.entrySet()) {
-//            String caller = entry.getKey();
-//            // 添加节点和边
-//            directedGraph.addVertex(caller);
-//            for (String callee : entry.getValue()) {
-//                directedGraph.addVertex(callee);
-//                directedGraph.addEdge(caller, callee);
-//            }
-//        }
-//
+
         logger.info("graph:" + graph + "\n");
         logger.info("View doT graph below via https://edotor.net/ :" + "\n");
 
-        String doT = toDoT(graph);
-        logger.info(doT);
+        String dot = toDoT(graph);
 
         try {
-            FileUtils.writeStringToFile(new File("graph.txt"), doT, "UTF-8", true);
+            FileUtils.writeStringToFile(new File("graph.txt"), dot, "UTF-8", true);
             logger.info("doT image saved to graph.txt");
         } catch (Exception e) {
             logger.error("write doT error, " + e.getMessage());
         }
+
+        var uri = "<uri>";
+        var user = "<username>";
+        var password = "<password>";
+        CallGraphManager callGraphManager = new CallGraphManager(uri, user, password, Config.defaultConfig());
+
+        callGraphManager.createCallGraph(projectInfo);
+        callGraphManager.close();
+        System.out.println("Successfully created a callgraph");
     }
     
     /**
@@ -111,13 +99,19 @@ public class Application {
      */
     public static String toDoT(Graph<CallGraphNode, DefaultWeightedEdge> directedGraph) {
         DOTExporter<CallGraphNode, DefaultWeightedEdge> exporter = new DOTExporter<>();
-        
-        // 为节点添加label
+
         exporter.setVertexAttributeProvider((v) -> {
             Map<String, Attribute> map = new LinkedHashMap<>();
             map.put("label", DefaultAttribute.createAttribute(v.toString()));
             return map;
         });
+
+        exporter.setEdgeAttributeProvider((e) -> {
+            Map<String, Attribute> map = new LinkedHashMap<>();
+            map.put("weight", DefaultAttribute.createAttribute(directedGraph.getEdgeWeight(e)));
+            return map;
+        });
+
         Writer writer = new StringWriter();
         exporter.exportGraph(directedGraph, writer);
         

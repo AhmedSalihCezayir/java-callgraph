@@ -1,5 +1,7 @@
 package com.aiddroid.java.callgraph;
 
+import java.util.Objects;
+
 public class CallGraphNode extends BasicFunctionDefNode {
     private String className;
     private String functionName;
@@ -49,5 +51,18 @@ public class CallGraphNode extends BasicFunctionDefNode {
                 ", declarationStart='" + super.getDeclarationStart() + '\'' +
                 ", declarationEnd='" + super.getDeclarationEnd() + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof CallGraphNode)) return false;
+        CallGraphNode that = (CallGraphNode) o;
+        return Objects.equals(className, that.className) && Objects.equals(functionName, that.functionName) && Objects.equals(packageName, that.packageName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(className, functionName, packageName);
     }
 }
