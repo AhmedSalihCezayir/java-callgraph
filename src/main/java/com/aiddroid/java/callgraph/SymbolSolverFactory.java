@@ -33,7 +33,7 @@ public class SymbolSolverFactory {
         CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
 
         ReflectionTypeSolver reflectionTypeSolver = new ReflectionTypeSolver(); // jdk推理
-//        reflectionTypeSolver.setParent(reflectionTypeSolver);
+        // reflectionTypeSolver.setParent(reflectionTypeSolver);
         combinedTypeSolver.add(reflectionTypeSolver);
 
         ProjectRoot projectRoot = new SymbolSolverCollectionStrategy().collect(new File(srcPaths.get(0)).toPath());
