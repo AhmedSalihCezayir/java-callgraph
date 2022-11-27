@@ -26,10 +26,9 @@ public class SymbolSolverFactory {
     /**
      * 获取符号推理器，以便获取某个类的具体来源
      * @param srcPaths
-     * @param libPaths
      * @return 
      */
-    public static JavaSymbolSolver getJavaSymbolSolver(List<String> srcPaths, List<String> libPaths) {
+    public static JavaSymbolSolver getJavaSymbolSolver(List<String> srcPaths) {
         CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
 
         ReflectionTypeSolver reflectionTypeSolver = new ReflectionTypeSolver(); // jdk推理
@@ -39,7 +38,7 @@ public class SymbolSolverFactory {
         ProjectRoot projectRoot = new SymbolSolverCollectionStrategy().collect(new File(srcPaths.get(0)).toPath());
         projectRoot.getSourceRoots().forEach(root -> combinedTypeSolver.add(new JavaParserTypeSolver(root.getRoot())));
 
-        List<JarTypeSolver> jarTypeSolvers = makeJarTypeSolvers(libPaths);//jar包推理
+        List<JarTypeSolver> jarTypeSolvers = makeJarTypeSolvers(srcPaths);//jar包推理
         jarTypeSolvers.stream().forEach(t -> combinedTypeSolver.add(t));
 
         JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedTypeSolver);
@@ -64,26 +63,5 @@ public class SymbolSolverFactory {
             e.printStackTrace();
         }
         return jarTypeSolvers;
-    }
-
-    /**
-     * 获取工程源代码src的符号推理器
-     * @param srcPaths
-     * @return 
-     */
-    private static List<JavaParserTypeSolver> makeJavaParserTypeSolvers(List<String> srcPaths) {
-        List<JavaParserTypeSolver> javaParserTypeSolvers = srcPaths.stream()
-                .map(t -> new JavaParserTypeSolver(new File(t))).collect(Collectors.toList());
-        return javaParserTypeSolvers;
-    }
-
-    /**
-     * 获取符号推理器
-     * @param srcPath
-     * @param libPath
-     * @return 
-     */
-    public JavaSymbolSolver getJavaSymbolSolver(String srcPath, String libPath) {
-        return getJavaSymbolSolver(Utils.makeListFromOneElement(srcPath), Utils.makeListFromOneElement(libPath));
     }
 }

@@ -49,13 +49,13 @@ public class MethodCallExtractor {
         List<String> srcPaths = settings.getSrcDirs();
         List<String> libPaths = settings.getLibDirs();
         List<Pattern> skipPatterns = settings.getSkipPatterns();
-        return getMethodCallRelation(srcPaths, libPaths, skipPatterns);
+        return getMethodCallRelation(srcPaths, skipPatterns);
     }
 
     // 获取调用关系
-    public Map<String, List<String>> getMethodCallRelation(List<String> srcPaths, List<String> libPaths, List<Pattern> skipPatterns) {
+    public Map<String, List<String>> getMethodCallRelation(List<String> srcPaths, List<Pattern> skipPatterns) {
         // 从src和lib目录下解析出符号
-        JavaSymbolSolver symbolSolver = SymbolSolverFactory.getJavaSymbolSolver(srcPaths, libPaths);
+        JavaSymbolSolver symbolSolver = SymbolSolverFactory.getJavaSymbolSolver(srcPaths);
         // TODO This is the latest way of configuring the parser. Check whether it breaks anything or not. If it does not break anything change it to the newer version.
         // StaticJavaParser.getParserConfiguration().setSymbolResolver(symbolSolver);
         StaticJavaParser.getConfiguration().setSymbolResolver(symbolSolver);
