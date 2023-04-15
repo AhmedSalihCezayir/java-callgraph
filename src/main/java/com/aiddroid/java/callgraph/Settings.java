@@ -76,7 +76,7 @@ public class Settings {
      */
     public void initFromCmdArgs(String[] args) {
         DefaultParser parser = new DefaultParser();
-        
+        getDirAbsPath("abcabc");
         try {
             CommandLine cmdLine = parser.parse(options, args);
             
